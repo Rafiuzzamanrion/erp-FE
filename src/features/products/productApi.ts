@@ -21,7 +21,10 @@ export const productApiSlice = apiSlice.injectEndpoints({
         url: "/products",
         params,
       }),
-      transformResponse: (response: { data: Product[]; meta: PaginationMeta }) => ({
+      transformResponse: (response: {
+        data: Product[];
+        meta: PaginationMeta;
+      }) => ({
         data: response.data,
         meta: response.meta,
       }),
@@ -39,7 +42,10 @@ export const productApiSlice = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ["Product"],
     }),
-    updateProduct: builder.mutation<ApiResponse<Product>, { id: string; body: FormData }>({
+    updateProduct: builder.mutation<
+      ApiResponse<Product>,
+      { id: string; body: FormData }
+    >({
       query: ({ id, body }) => ({
         url: `/products/${id}`,
         method: "PUT",
@@ -55,7 +61,10 @@ export const productApiSlice = apiSlice.injectEndpoints({
         url: `/products/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Product"],
+      invalidatesTags: (_result, _error, id) => [
+        "Product",
+        { type: "ProductDetail", id },
+      ],
     }),
   }),
 });

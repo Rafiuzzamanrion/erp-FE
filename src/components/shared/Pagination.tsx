@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -9,7 +10,7 @@ interface PaginationProps {
   total?: number;
 }
 
-export function Pagination({
+export const Pagination = memo(function Pagination({
   page,
   totalPages,
   onPageChange,
@@ -80,4 +81,4 @@ export function Pagination({
       </div>
     </div>
   );
-}
+});

@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { memo, useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, Package } from "lucide-react";
@@ -11,7 +11,7 @@ interface ProductSelectorProps {
   excludeIds?: string[];
 }
 
-export default function ProductSelector({
+export default memo(function ProductSelector({
   onSelect,
   excludeIds = [],
 }: ProductSelectorProps) {
@@ -183,4 +183,4 @@ export default function ProductSelector({
       )}
     </div>
   );
-}
+});

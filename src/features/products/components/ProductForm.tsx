@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -35,7 +35,7 @@ interface ProductFormProps {
   isLoading?: boolean;
 }
 
-export default function ProductForm({
+export default memo(function ProductForm({
   initialData,
   onSubmit,
   onCancel,
@@ -62,7 +62,8 @@ export default function ProductForm({
     },
   });
 
-  const { data: categories = [] } = useGetCategoriesQuery();
+  const { data: categoriesResult } = useGetCategoriesQuery();
+  const categories = categoriesResult?.data ?? [];
 
   const onFormSubmit = async (data: ProductFormValues) => {
     if (!initialData && !imageFile) {
@@ -219,4 +220,4 @@ export default function ProductForm({
       </div>
     </form>
   );
-}
+});

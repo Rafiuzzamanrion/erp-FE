@@ -47,7 +47,8 @@ export default function ProductListPage() {
       },
       { skip: false }
     );
-  const { data: categories = [] } = useGetCategoriesQuery();
+  const { data: categoriesResult } = useGetCategoriesQuery();
+  const categories = categoriesResult?.data ?? [];
 
   const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
 

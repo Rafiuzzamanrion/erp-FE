@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Link } from "react-router-dom";
 import { Pencil, Trash2 } from "lucide-react";
 import {
@@ -28,7 +29,7 @@ function getStockVariant(qty: number): "success" | "warning" | "destructive" {
   return "destructive";
 }
 
-export default function ProductTable({
+export default memo(function ProductTable({
   products,
   meta,
   onPageChange,
@@ -131,4 +132,4 @@ export default function ProductTable({
       )}
     </div>
   );
-}
+});
