@@ -5,6 +5,7 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api/v1";
 
 export const baseQuery = fetchBaseQuery({
   baseUrl: API_URL,
+  credentials: "include",
   prepareHeaders: (headers, { getState }) => {
     const token = (getState() as RootState).auth.token;
     if (token) {
