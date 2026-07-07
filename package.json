@@ -22,6 +22,7 @@
     ]
   },
   "dependencies": {
+    "@highcharts/react": "^5.2.2",
     "@hookform/resolvers": "^5.4.0",
     "@radix-ui/react-alert-dialog": "^1.1.18",
     "@radix-ui/react-avatar": "^1.2.1",
@@ -41,7 +42,6 @@
     "clsx": "^2.1.1",
     "framer-motion": "^12.42.2",
     "highcharts": "^13.0.0",
-    "highcharts-react-official": "^3.2.3",
     "lucide-react": "^1.23.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",

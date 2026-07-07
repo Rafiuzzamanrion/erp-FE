@@ -1,6 +1,15 @@
 import { useMemo } from "react";
-import Highcharts from "highcharts";
-import HighchartsReact from "highcharts-react-official";
+import {
+  Chart,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  Credits,
+  PlotOptions,
+} from "@highcharts/react";
+import { AreaSplineSeries } from "@highcharts/react/series/AreaSpline";
+import { SplineSeries } from "@highcharts/react/series/Spline";
 import {
   Card,
   CardContent,
@@ -15,89 +24,18 @@ interface RevenueChartProps {
 }
 
 export default function RevenueChart({ data }: RevenueChartProps) {
-  const options = useMemo<Highcharts.Options>(() => {
-    const categories = data.map((d) =>
-      new Date(d.date).toLocaleDateString("en-US", { weekday: "short" })
-    );
-    const revenue = data.map((d) => Number(d.revenue.toFixed(2)));
-    const sales = data.map((d) => d.sales);
-
-    return {
-      chart: {
-        type: "areaspline",
-        backgroundColor: "transparent",
-        height: 320,
-        style: { fontFamily: "Inter, sans-serif" },
-      },
-      title: { text: "" },
-      credits: { enabled: false },
-      xAxis: {
-        categories,
-        crosshair: true,
-        lineColor: "hsl(var(--border))",
-        labels: { style: { color: "hsl(var(--muted-foreground))" } },
-      },
-      yAxis: [
-        {
-          title: { text: "" },
-          gridLineColor: "hsl(var(--border))",
-          labels: {
-            style: { color: "hsl(var(--muted-foreground))" },
-            formatter: function (
-              this: Highcharts.AxisLabelsFormatterContextObject
-            ): string {
-              return "$" + (this.value as number);
-            },
-          },
-        },
-        {
-          title: { text: "" },
-          opposite: true,
-          gridLineWidth: 0,
-          labels: { style: { color: "hsl(var(--muted-foreground))" } },
-        },
-      ],
-      tooltip: {
-        shared: true,
-        backgroundColor: "hsl(var(--popover))",
-        borderColor: "hsl(var(--border))",
-        style: { color: "hsl(var(--popover-foreground))" },
-      },
-      legend: {
-        itemStyle: { color: "hsl(var(--foreground))" },
-      },
-      plotOptions: {
-        areaspline: {
-          fillOpacity: 0.15,
-          marker: { radius: 4 },
-          lineWidth: 2,
-        },
-      },
-      series: [
-        {
-          name: "Revenue",
-          type: "areaspline",
-          data: revenue,
-          color: "hsl(174 72% 35%)",
-          fillColor: {
-            linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
-            stops: [
-              [0, "rgba(13, 148, 136, 0.25)"],
-              [1, "rgba(13, 148, 136, 0.02)"],
-            ],
-          },
-        },
-        {
-          name: "Sales",
-          type: "spline",
-          data: sales,
-          color: "hsl(200 90% 50%)",
-          yAxis: 1,
-          marker: { radius: 3 },
-        },
-      ],
-    };
-  }, [data]);
+  const categories = useMemo(
+    () =>
+      data.map((d) =>
+        new Date(d.date).toLocaleDateString("en-US", { weekday: "short" })
+      ),
+    [data]
+  );
+  const revenue = useMemo(
+    () => data.map((d) => Number(d.revenue.toFixed(2))),
+    [data]
+  );
+  const sales = useMemo(() => data.map((d) => d.sales), [data]);
 
   return (
     <Card className="border-none shadow-sm h-full">
@@ -108,7 +46,127 @@ export default function RevenueChart({ data }: RevenueChartProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <HighchartsReact highcharts={Highcharts} options={options} />
+        <Chart
+          title=""
+          height={340}
+          backgroundColor="transparent"
+          options={{
+            chart: {
+              style: { fontFamily: "Inter, sans-serif" },
+              spacing: [10, 10, 15, 10],
+            },
+          }}
+        >
+          <Credits enabled={false} />
+          <Tooltip
+            shared
+            useHTML
+            backgroundColor="var(--color-popover)"
+            borderColor="var(--color-border)"
+            borderWidth={1}
+            borderRadius={8}
+            shadow={false}
+            style={{
+              color: "var(--color-popover-foreground)",
+              fontSize: "13px",
+            }}
+            valuePrefix="$"
+            valueDecimals={2}
+          />
+          <Legend
+            verticalAlign="top"
+            align="right"
+            itemStyle={{
+              color: "var(--color-muted-foreground)",
+              fontSize: "13px",
+              fontWeight: "500",
+            }}
+            itemHoverStyle={{ color: "var(--color-foreground)" }}
+            symbolRadius={3}
+            symbolWidth={12}
+            symbolHeight={12}
+          />
+          <XAxis
+            categories={categories}
+            crosshair={{
+              color: "var(--color-border)",
+              width: 1,
+              dashStyle: "Dash",
+            }}
+            lineColor="transparent"
+            tickColor="transparent"
+            labels={{
+              style: {
+                color: "var(--color-muted-foreground)",
+                fontSize: "12px",
+              },
+            }}
+          />
+          <YAxis
+            title={{ text: "" }}
+            gridLineColor="var(--color-border)"
+            gridLineWidth={1}
+            lineColor="transparent"
+            tickColor="transparent"
+            labels={{
+              style: {
+                color: "var(--color-muted-foreground)",
+                fontSize: "12px",
+              },
+            }}
+          />
+          <YAxis
+            title={{ text: "" }}
+            opposite
+            gridLineWidth={0}
+            lineColor="transparent"
+            tickColor="transparent"
+            labels={{
+              style: {
+                color: "var(--color-muted-foreground)",
+                fontSize: "12px",
+              },
+            }}
+          />
+          <PlotOptions
+            areaspline={{
+              fillOpacity: 0.08,
+              marker: { radius: 0, states: { hover: { radius: 4 } } },
+              lineWidth: 2.5,
+              states: { hover: { lineWidthPlus: 0 } },
+            }}
+            spline={{
+              marker: { radius: 0, states: { hover: { radius: 4 } } },
+              lineWidth: 2.5,
+              states: { hover: { lineWidthPlus: 0 } },
+            }}
+          />
+          <AreaSplineSeries
+            name="Revenue"
+            data={revenue}
+            color="hsl(174 72% 40%)"
+            options={{
+              fillColor: {
+                linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+                stops: [
+                  [0, "hsla(174, 72%, 40%, 0.15)"],
+                  [1, "hsla(174, 72%, 40%, 0.01)"],
+                ],
+              },
+              zIndex: 2,
+            }}
+          />
+          <SplineSeries
+            name="Sales"
+            data={sales}
+            color="hsl(200 85% 55%)"
+            options={{
+              yAxis: 1,
+              dashStyle: "Dash",
+              zIndex: 1,
+            }}
+          />
+        </Chart>
       </CardContent>
     </Card>
   );

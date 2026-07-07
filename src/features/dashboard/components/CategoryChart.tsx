@@ -1,6 +1,16 @@
 import { useMemo } from "react";
-import Highcharts from "highcharts";
-import HighchartsReact from "highcharts-react-official";
+import {
+  Chart,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  Credits,
+  PlotOptions,
+  Title,
+  Subtitle,
+} from "@highcharts/react";
+import { ColumnSeries } from "@highcharts/react/series/Column";
 import type { CategoryRevenue } from "@/types";
 
 interface CategoryChartProps {
@@ -8,59 +18,146 @@ interface CategoryChartProps {
 }
 
 export default function CategoryChart({ data }: CategoryChartProps) {
-  const options = useMemo<Highcharts.Options>(() => {
-    return {
-      chart: {
-        type: "pie",
-        backgroundColor: "transparent",
-        height: 300,
-        style: { fontFamily: "Inter, sans-serif" },
-      },
-      title: { text: "" },
-      credits: { enabled: false },
-      tooltip: {
-        pointFormat: "{series.name}: <b>${point.y:.2f}</b>",
-        backgroundColor: "hsl(var(--popover))",
-        borderColor: "hsl(var(--border))",
-        style: { color: "hsl(var(--popover-foreground))" },
-      },
-      legend: {
-        itemStyle: { color: "hsl(var(--foreground))" },
-      },
-      plotOptions: {
-        pie: {
-          innerSize: "60%",
-          borderRadius: 6,
-          dataLabels: { enabled: false },
-          showInLegend: true,
-        },
-      },
-      series: [
-        {
-          name: "Revenue",
-          type: "pie",
-          data: data.map((item) => ({
-            name: item.category,
-            y: Number(item.revenue.toFixed(2)),
-          })),
-          colors: [
-            "hsl(174 72% 35%)",
-            "hsl(200 85% 45%)",
-            "hsl(150 60% 45%)",
-            "hsl(38 90% 50%)",
-            "hsl(340 75% 55%)",
-          ],
-        },
-      ],
-    };
-  }, [data]);
+  const sortedData = useMemo(
+    () => [...data].sort((a, b) => b.revenue - a.revenue).slice(0, 6),
+    [data]
+  );
+
+  const categories = useMemo(
+    () => sortedData.map((item) => item.category),
+    [sortedData]
+  );
+
+  const columnData = useMemo(
+    () => sortedData.map((item) => Number(item.revenue.toFixed(2))),
+    [sortedData]
+  );
+
+  const totalRevenue = useMemo(
+    () => sortedData.reduce((sum, item) => sum + item.revenue, 0),
+    [sortedData]
+  );
+
+  const maxValue = useMemo(
+    () => (columnData.length ? Math.max(...columnData) : 0),
+    [columnData]
+  );
 
   return (
     <div className="h-full flex flex-col">
       <h3 className="text-lg font-semibold mb-1">Top Products</h3>
       <p className="text-sm text-muted-foreground mb-4">Revenue by product</p>
-      <div className="flex-1 min-h-[300px]">
-        <HighchartsReact highcharts={Highcharts} options={options} />
+      <div className="flex-1 min-h-[320px]">
+        <Chart
+          title=""
+          height={340}
+          backgroundColor="transparent"
+          options={{
+            chart: {
+              polar: true,
+              inverted: true,
+              style: { fontFamily: "Inter, sans-serif" },
+              spacing: [10, 10, 10, 10],
+            },
+            pane: {
+              size: "85%",
+              innerSize: "25%",
+              background: { backgroundColor: "transparent", borderWidth: 0 },
+            },
+          }}
+        >
+          <Credits enabled={false} />
+          <Tooltip
+            useHTML
+            backgroundColor="var(--color-popover)"
+            borderColor="var(--color-border)"
+            borderWidth={1}
+            borderRadius={8}
+            shadow={false}
+            style={{
+              color: "var(--color-popover-foreground)",
+              fontSize: "13px",
+            }}
+            valuePrefix="$"
+            valueDecimals={2}
+          />
+          <Legend enabled={false} />
+          <Title
+            text={`$${(totalRevenue / 1000).toFixed(1)}k`}
+            align="center"
+            verticalAlign="middle"
+            floating
+            y={8}
+            style={{
+              color: "var(--color-foreground)",
+              fontSize: "22px",
+              fontWeight: "700",
+            }}
+          />
+          <Subtitle
+            text="Total"
+            align="center"
+            verticalAlign="middle"
+            floating
+            y={30}
+            style={{
+              color: "var(--color-muted-foreground)",
+              fontSize: "12px",
+              fontWeight: "500",
+            }}
+          />
+          <XAxis
+            categories={categories}
+            lineColor="transparent"
+            tickColor="transparent"
+            labels={{
+              style: {
+                color: "var(--color-foreground)",
+                fontSize: "12px",
+                fontWeight: "500",
+              },
+            }}
+          />
+          <YAxis
+            visible={false}
+            min={0}
+            max={maxValue * 1.15}
+            endOnTick={false}
+            lineColor="transparent"
+            tickColor="transparent"
+            gridLineWidth={0}
+          />
+          <PlotOptions
+            column={{
+              pointPadding: 0.05,
+              groupPadding: 0,
+              borderWidth: 0,
+              borderRadius: 6,
+              colorByPoint: true,
+              dataLabels: {
+                enabled: false,
+              },
+              states: {
+                hover: { brightness: 0.05 },
+                inactive: { opacity: 0.3 },
+              },
+            }}
+          />
+          <ColumnSeries
+            name="Revenue"
+            data={columnData}
+            options={{
+              colors: [
+                "hsl(174 72% 42%)",
+                "hsl(185 80% 48%)",
+                "hsl(195 85% 55%)",
+                "hsl(210 75% 58%)",
+                "hsl(260 65% 60%)",
+                "hsl(320 60% 58%)",
+              ],
+            }}
+          />
+        </Chart>
       </div>
     </div>
   );
