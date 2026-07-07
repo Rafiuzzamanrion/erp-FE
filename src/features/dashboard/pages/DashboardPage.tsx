@@ -203,7 +203,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-1 rounded-xl border bg-card shadow-sm p-6">
+        <div className="lg:col-span-1 rounded-xl border bg-card shadow-sm p-6 h-full min-h-[420px]">
           <CategoryChart data={stats?.categoryRevenue ?? []} />
         </div>
         <div className="lg:col-span-2">

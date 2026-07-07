@@ -7,10 +7,8 @@ import {
   Legend,
   Credits,
   PlotOptions,
-  Title,
-  Subtitle,
 } from "@highcharts/react";
-import { ColumnSeries } from "@highcharts/react/series/Column";
+import { BarSeries } from "@highcharts/react/series/Bar";
 import type { CategoryRevenue } from "@/types";
 
 interface CategoryChartProps {
@@ -28,7 +26,7 @@ export default memo(function CategoryChart({ data }: CategoryChartProps) {
     [sortedData]
   );
 
-  const columnData = useMemo(
+  const barData = useMemo(
     () => sortedData.map((item) => Number(item.revenue.toFixed(2))),
     [sortedData]
   );
@@ -38,31 +36,54 @@ export default memo(function CategoryChart({ data }: CategoryChartProps) {
     [sortedData]
   );
 
-  const maxValue = useMemo(
-    () => (columnData.length ? Math.max(...columnData) : 0),
-    [columnData]
+  const chartHeight = useMemo(
+    () => Math.max(280, sortedData.length * 42 + 80),
+    [sortedData.length]
   );
 
   return (
     <div className="h-full flex flex-col">
-      <h3 className="text-lg font-semibold mb-1">Top Products</h3>
-      <p className="text-sm text-muted-foreground mb-4">Revenue by product</p>
-      <div className="flex-1 min-h-[320px]">
+      <div className="flex items-center justify-between gap-4 mb-1">
+        <div>
+          <h3 className="text-lg font-semibold">Top Products</h3>
+          <p className="text-sm text-muted-foreground">Revenue by product</p>
+        </div>
+        <div className="text-right shrink-0">
+          <p className="text-xl font-bold leading-none">
+            ${(totalRevenue / 1000).toFixed(1)}k
+          </p>
+          <p className="text-[11px] text-muted-foreground uppercase tracking-wide mt-0.5">
+            Total
+          </p>
+        </div>
+      </div>
+
+      <div className="flex-1 min-h-[280px] w-full">
         <Chart
           title=""
-          height={340}
+          height={chartHeight}
           backgroundColor="transparent"
           options={{
             chart: {
-              polar: true,
+              type: "bar",
               inverted: true,
               style: { fontFamily: "Inter, sans-serif" },
-              spacing: [10, 10, 10, 10],
+              spacing: [0, 0, 0, 0],
+              marginLeft: 100,
+              marginRight: 20,
             },
-            pane: {
-              size: "85%",
-              innerSize: "25%",
-              background: { backgroundColor: "transparent", borderWidth: 0 },
+            responsive: {
+              rules: [
+                {
+                  condition: { maxWidth: 300 },
+                  chartOptions: {
+                    chart: { marginLeft: 80 },
+                    xAxis: {
+                      labels: { style: { fontSize: "10px" } },
+                    },
+                  },
+                },
+              ],
             },
           }}
         >
@@ -82,70 +103,41 @@ export default memo(function CategoryChart({ data }: CategoryChartProps) {
             valueDecimals={2}
           />
           <Legend enabled={false} />
-          <Title
-            text={`$${(totalRevenue / 1000).toFixed(1)}k`}
-            align="center"
-            verticalAlign="middle"
-            floating
-            y={8}
-            style={{
-              color: "var(--color-foreground)",
-              fontSize: "22px",
-              fontWeight: "700",
-            }}
-          />
-          <Subtitle
-            text="Total"
-            align="center"
-            verticalAlign="middle"
-            floating
-            y={30}
-            style={{
-              color: "var(--color-muted-foreground)",
-              fontSize: "12px",
-              fontWeight: "500",
-            }}
-          />
           <XAxis
             categories={categories}
             lineColor="transparent"
             tickColor="transparent"
             labels={{
+              align: "right",
+              x: -8,
               style: {
                 color: "var(--color-foreground)",
                 fontSize: "12px",
                 fontWeight: "500",
+                textOverflow: "ellipsis",
               },
             }}
           />
           <YAxis
             visible={false}
-            min={0}
-            max={maxValue * 1.15}
-            endOnTick={false}
-            lineColor="transparent"
-            tickColor="transparent"
             gridLineWidth={0}
+            labels={{ enabled: false }}
           />
           <PlotOptions
-            column={{
-              pointPadding: 0.05,
-              groupPadding: 0,
+            bar={{
               borderWidth: 0,
-              borderRadius: 6,
+              borderRadius: 5,
               colorByPoint: true,
-              dataLabels: {
-                enabled: false,
-              },
+              dataLabels: { enabled: false },
               states: {
                 hover: { brightness: 0.05 },
                 inactive: { opacity: 0.3 },
               },
             }}
           />
-          <ColumnSeries
+          <BarSeries
             name="Revenue"
-            data={columnData}
+            data={barData}
             options={{
               colors: [
                 "hsl(174 72% 42%)",
@@ -154,6 +146,8 @@ export default memo(function CategoryChart({ data }: CategoryChartProps) {
                 "hsl(210 75% 58%)",
                 "hsl(260 65% 60%)",
                 "hsl(320 60% 58%)",
+                "hsl(340 70% 60%)",
+                "hsl(30 85% 55%)",
               ],
             }}
           />
