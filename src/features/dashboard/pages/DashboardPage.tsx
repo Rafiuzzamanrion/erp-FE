@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Package,
@@ -14,7 +14,10 @@ import { useAppSelector, useAppDispatch } from "@/app/hooks";
 import { apiSlice } from "@/lib/baseQuery";
 import { staggerContainer, pageTransition } from "@/lib/motion";
 import { formatCurrency } from "@/lib/utils";
-import { useGetStatsQuery } from "../dashboardApi";
+import {
+  useGetStatsQuery,
+  useLazyGetLowStockAlertsQuery,
+} from "../dashboardApi";
 import { default as LowStockListComponent } from "../components/LowStockList";
 import { StatCard } from "@/components/shared/StatCard";
 import DashboardSkeleton from "@/components/shared/DashboardSkeleton";
@@ -22,16 +25,68 @@ import RevenueChart from "../components/RevenueChart";
 import CategoryChart from "../components/CategoryChart";
 import RecentSales from "../components/RecentSales";
 
+const SOCKET_URL = import.meta.env.VITE_API_URL
+  ? import.meta.env.VITE_API_URL.replace("/api/v1", "")
+  : "http://localhost:5000";
+
+const POLL_INTERVAL = 15_000;
+
 export default function DashboardPage() {
   const dispatch = useAppDispatch();
   const token = useAppSelector((state) => state.auth.token);
   const { data, isLoading, isError, error, refetch } = useGetStatsQuery();
+  const prevLowStockRef = useRef<string[]>([]);
+  const [fetchLowStockAlerts] = useLazyGetLowStockAlertsQuery();
+
+  const checkForNewLowStock = useCallback(async () => {
+    try {
+      const result = await fetchLowStockAlerts().unwrap();
+      if (!result.data) return;
+
+      const currentIds = result.data.lowStockProducts.map((p) => p._id);
+      const prevIds = prevLowStockRef.current;
+      const newIds = currentIds.filter((id) => !prevIds.includes(id));
+
+      for (const id of newIds) {
+        const product = result.data.lowStockProducts.find((p) => p._id === id);
+        if (product) {
+          toast.warning(
+            `${product.name} is running low on stock (${product.stockQuantity} remaining)`
+          );
+          dispatch(apiSlice.util.invalidateTags(["Dashboard"]));
+        }
+      }
+
+      prevLowStockRef.current = currentIds;
+    } catch {}
+  }, [fetchLowStockAlerts, dispatch]);
 
   useEffect(() => {
     if (!token) return;
 
-    const socket = socketIO("http://localhost:5000", {
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+    let connectionTimeout: ReturnType<typeof setTimeout>;
+
+    const socket = socketIO(SOCKET_URL, {
       auth: { token },
+      reconnectionAttempts: 2,
+      timeout: 5_000,
+    });
+
+    connectionTimeout = setTimeout(() => {
+      if (!socket.connected) {
+        socket.close();
+        pollTimer = setInterval(checkForNewLowStock, POLL_INTERVAL);
+        checkForNewLowStock();
+      }
+    }, 3_000);
+
+    socket.on("connect", () => {
+      clearTimeout(connectionTimeout);
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
     });
 
     socket.on("stock:low", (alertData: unknown) => {
@@ -47,9 +102,11 @@ export default function DashboardPage() {
     });
 
     return () => {
-      socket.disconnect();
+      clearTimeout(connectionTimeout);
+      if (pollTimer) clearInterval(pollTimer);
+      socket.close();
     };
-  }, [token, dispatch]);
+  }, [token, dispatch, checkForNewLowStock]);
 
   if (isLoading) {
     return (
