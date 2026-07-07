@@ -1,29 +1,33 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { Plus, RotateCw, Search } from "lucide-react";
+import { Plus, RotateCw, Search, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useAppSelector } from "@/app/hooks";
 import { useGetProductsQuery, useDeleteProductMutation } from "../productApi";
 import ProductTable from "../components/ProductTable";
 import NoDataFound from "@/components/shared/NoDataFound";
-import ProductTableSkeleton from "@/components/shared/ProductTableSkeleton";
+import ProductListSkeleton from "@/components/shared/ProductListSkeleton";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useGetCategoriesQuery } from "@/features/categories/categoryApi";
 
 export default function ProductListPage() {
   const user = useAppSelector((state) => state.auth.user);
   const isEmployee = user?.role === "employee";
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const [searchInput, setSearchInput] = useState(searchParams.get("search") ?? "");
+  const [searchInput, setSearchInput] = useState(
+    searchParams.get("search") ?? ""
+  );
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const search = searchParams.get("search") ?? "";
@@ -31,10 +35,17 @@ export default function ProductListPage() {
   const page = Number(searchParams.get("page")) || 1;
   const limit = 10;
 
-  const { data, isLoading, isFetching, isError, error, refetch } = useGetProductsQuery(
-    { search, category, page, limit },
-    { skip: false }
-  );
+  const { data, isLoading, isFetching, isError, error, refetch } =
+    useGetProductsQuery(
+      {
+        search: search || undefined,
+        category: category || undefined,
+        page,
+        limit,
+      },
+      { skip: false }
+    );
+  const { data: categories = [] } = useGetCategoriesQuery();
 
   const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
 
@@ -68,7 +79,7 @@ export default function ProductListPage() {
   }, [searchInput, search, updateParams]);
 
   const handleCategoryChange = (value: string) => {
-    updateParams({ category: value });
+    updateParams({ category: value === "all" ? "" : value });
   };
 
   const handlePageChange = (newPage: number) => {
@@ -95,8 +106,13 @@ export default function ProductListPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Products</h1>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Products</h1>
+          <p className="text-muted-foreground">
+            Manage your inventory and stock levels
+          </p>
+        </div>
         {!isEmployee && (
           <Button asChild>
             <Link to="/products/new">
@@ -107,29 +123,46 @@ export default function ProductListPage() {
         )}
       </div>
 
-      <div className="flex gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search products..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <Input
-          placeholder="Category filter..."
-          value={category}
-          onChange={(e) => handleCategoryChange(e.target.value)}
-          className="max-w-[200px]"
-        />
-        {isFetching && !isLoading && (
-          <RotateCw className="h-4 w-4 animate-spin self-center text-muted-foreground" />
-        )}
-      </div>
+      <Card className="border-none shadow-sm">
+        <CardContent className="p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search products..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <div className="flex items-center gap-3">
+              <SlidersHorizontal className="h-4 w-4 text-muted-foreground hidden sm:block" />
+              <Select
+                value={category || "all"}
+                onValueChange={handleCategoryChange}
+              >
+                <SelectTrigger className="w-44">
+                  <SelectValue placeholder="All categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All categories</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat._id} value={cat.name}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {isFetching && !isLoading && (
+                <RotateCw className="h-4 w-4 animate-spin self-center text-muted-foreground" />
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {isFirstLoad ? (
-        <ProductTableSkeleton />
+        <ProductListSkeleton />
       ) : isError ? (
         <NoDataFound
           title="Failed to load products"
@@ -146,10 +179,14 @@ export default function ProductListPage() {
         />
       ) : data && data.data.length === 0 ? (
         <NoDataFound
-          title="No products found"
+          title={
+            search || category
+              ? "No products match your filters"
+              : "No products found"
+          }
           description={
             search || category
-              ? "No products match your search criteria. Try adjusting your filters."
+              ? "Try adjusting your search or category filter."
               : "Get started by adding your first product to the inventory."
           }
           action={
@@ -162,35 +199,26 @@ export default function ProductListPage() {
               </Button>
             ) : undefined
           }
+          variant={search || category ? "search" : "empty"}
         />
       ) : (
         <ProductTable
           products={data?.data ?? []}
-          isLoading={isFetching}
           meta={data?.meta}
           onPageChange={handlePageChange}
           onDelete={handleDelete}
         />
       )}
 
-      <Dialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Product</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this product? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteId(null)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" loading={isDeleting} onClick={confirmDelete}>
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        title="Delete Product"
+        description="Are you sure you want to delete this product? This action cannot be undone."
+        onConfirm={confirmDelete}
+        isLoading={isDeleting}
+        variant="destructive"
+      />
     </div>
   );
 }

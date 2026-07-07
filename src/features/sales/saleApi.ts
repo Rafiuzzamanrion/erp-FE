@@ -16,7 +16,7 @@ export const saleApi = apiSlice.injectEndpoints({
     }),
     getSales: builder.query<
       PaginatedResponse<Sale>,
-      { page?: number; limit?: number; sort?: string }
+      { page?: number; limit?: number; sort?: string; search?: string }
     >({
       query: (params) => ({
         url: "/sales",
@@ -33,8 +33,5 @@ export const saleApi = apiSlice.injectEndpoints({
   }),
 });
 
-export const {
-  useCreateSaleMutation,
-  useGetSalesQuery,
-  useGetSaleQuery,
-} = saleApi;
+export const { useCreateSaleMutation, useGetSalesQuery, useGetSaleQuery } =
+  saleApi;

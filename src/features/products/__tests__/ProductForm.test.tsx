@@ -1,24 +1,57 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
+import { Provider } from "react-redux";
+import { configureStore } from "@reduxjs/toolkit";
 import ProductForm from "../components/ProductForm";
+import authReducer from "@/features/auth/authSlice";
 
 vi.mock("@/components/shared/ImageUploader", () => ({
   ImageUploader: () => <div data-testid="image-uploader">ImageUploader</div>,
 }));
 
+vi.mock("@/features/categories/categoryApi", () => ({
+  useGetCategoriesQuery: () => ({
+    data: [
+      { _id: "1", name: "Electronics", description: "" },
+      { _id: "2", name: "Accessories", description: "" },
+    ],
+    isLoading: false,
+  }),
+}));
+
+function createTestStore() {
+  return configureStore({
+    reducer: {
+      auth: authReducer,
+      api: () => ({}),
+    },
+    preloadedState: {
+      auth: {
+        user: null,
+        token: "test-token",
+        isAuthenticated: false,
+        isLoading: false,
+        error: null,
+      },
+    },
+  });
+}
+
 function renderForm(props: Partial<Parameters<typeof ProductForm>[0]> = {}) {
   return render(
-    <MemoryRouter>
-      <ProductForm onSubmit={vi.fn()} {...props} />
-    </MemoryRouter>
+    <Provider store={createTestStore()}>
+      <MemoryRouter>
+        <ProductForm onSubmit={vi.fn()} {...props} />
+      </MemoryRouter>
+    </Provider>
   );
 }
 
 describe("ProductForm", () => {
   it("renders all fields (name, sku, category, prices, stock)", () => {
     renderForm();
-    expect(screen.getByLabelText("Name")).toBeInTheDocument();
+    expect(screen.getByLabelText("Product Name")).toBeInTheDocument();
     expect(screen.getByLabelText("SKU")).toBeInTheDocument();
     expect(screen.getByLabelText("Category")).toBeInTheDocument();
     expect(screen.getByLabelText("Purchase Price")).toBeInTheDocument();

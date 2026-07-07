@@ -1,10 +1,11 @@
-import { useNavigate } from "react-router-dom";
-import { Sun, Moon, LogOut } from "lucide-react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import { Sun, Moon, LogOut, ChevronRight, Bell } from "lucide-react";
 import { useAppSelector, useAppDispatch } from "@/app/hooks";
 import { logout } from "@/features/auth/authSlice";
-import { setTheme, toggleSidebar } from "@/app/uiSlice";
+import { setTheme } from "@/app/uiSlice";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,10 +13,40 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
+
+const breadcrumbMap: Record<string, { label: string; to?: string }[]> = {
+  "/": [{ label: "Dashboard" }],
+  "/products": [{ label: "Inventory" }, { label: "Products" }],
+  "/products/new": [
+    { label: "Inventory" },
+    { label: "Products", to: "/products" },
+    { label: "Add Product" },
+  ],
+  "/products/:id/edit": [
+    { label: "Inventory" },
+    { label: "Products", to: "/products" },
+    { label: "Edit Product" },
+  ],
+  "/categories": [{ label: "Inventory" }, { label: "Categories" }],
+  "/sales": [{ label: "Sales" }, { label: "Sale History" }],
+  "/sales/new": [{ label: "Sales" }, { label: "New Sale" }],
+  "/users": [{ label: "Admin" }, { label: "Users" }],
+  "/roles": [{ label: "Admin" }, { label: "Roles" }],
+};
+
+function getBreadcrumbs(pathname: string) {
+  if (breadcrumbMap[pathname]) return breadcrumbMap[pathname];
+  if (pathname.startsWith("/products/") && pathname.endsWith("/edit")) {
+    return breadcrumbMap["/products/:id/edit"];
+  }
+  return [{ label: pathname.replace("/", "") || "Dashboard" }];
+}
 
 export function Topbar() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const user = useAppSelector((state) => state.auth.user);
   const theme = useAppSelector((state) => state.ui.theme);
 
@@ -37,53 +68,92 @@ export function Topbar() {
         .slice(0, 2)
     : "U";
 
+  const breadcrumbs = getBreadcrumbs(location.pathname);
+
   return (
-    <header className="flex h-14 items-center justify-between border-b bg-card px-6">
-      <div className="flex items-center gap-4">
+    <header className="flex h-16 items-center justify-between border-b bg-card/80 backdrop-blur px-6 sticky top-0 z-30">
+      <div className="flex items-center gap-2 text-sm">
+        {breadcrumbs.map((crumb, index) => (
+          <div key={index} className="flex items-center gap-2">
+            {index > 0 && (
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            )}
+            {crumb.to && index < breadcrumbs.length - 1 ? (
+              <Link
+                to={crumb.to}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {crumb.label}
+              </Link>
+            ) : (
+              <span
+                className={cn(
+                  "font-medium",
+                  index === breadcrumbs.length - 1
+                    ? "text-foreground"
+                    : "text-muted-foreground"
+                )}
+              >
+                {crumb.label}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="flex items-center gap-3">
         <Button
           variant="ghost"
           size="icon"
-          className="hidden lg:flex"
-          onClick={() => dispatch(toggleSidebar())}
+          className="rounded-full"
+          aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+          onClick={toggleTheme}
         >
-          <svg
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 6h16M4 12h16M4 18h16"
-            />
-          </svg>
-        </Button>
-        <h2 className="text-sm font-medium text-muted-foreground">
-          {/* breadcrumb could go here */}
-        </h2>
-      </div>
-
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={toggleTheme}>
           {theme === "light" ? (
-            <Moon className="h-5 w-5" />
+            <Moon className="h-5 w-5 text-muted-foreground" />
           ) : (
-            <Sun className="h-5 w-5" />
+            <Sun className="h-5 w-5 text-muted-foreground" />
           )}
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-full relative"
+          aria-label="Notifications"
+        >
+          <Bell className="h-5 w-5 text-muted-foreground" />
+          <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary" />
         </Button>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback>{initials}</AvatarFallback>
+            <Button
+              variant="ghost"
+              className="rounded-full px-2 py-1 h-auto gap-2"
+            >
+              <Avatar className="h-8 w-8 border border-border">
+                <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                  {initials}
+                </AvatarFallback>
               </Avatar>
+              <div className="hidden md:flex flex-col items-start">
+                <span className="text-sm font-medium leading-none">
+                  {user?.name ?? "User"}
+                </span>
+                <span className="text-xs text-muted-foreground capitalize">
+                  {user?.role ?? "-"}
+                </span>
+              </div>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <div className="flex items-center gap-2 px-2 py-1.5">
+          <DropdownMenuContent align="end" className="w-56">
+            <div className="flex items-center gap-3 px-2 py-2">
+              <Avatar className="h-9 w-9 border border-border">
+                <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
               <div className="flex flex-col space-y-0.5">
                 <p className="text-sm font-medium">{user?.name ?? "User"}</p>
                 <p className="text-xs text-muted-foreground">
@@ -92,8 +162,17 @@ export function Topbar() {
               </div>
             </div>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>
-              <LogOut className="h-4 w-4" />
+            <div className="px-2 py-1.5">
+              <Badge variant="secondary" className="capitalize text-xs">
+                {user?.role ?? "user"}
+              </Badge>
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={handleLogout}
+              className="text-destructive focus:text-destructive"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
               Logout
             </DropdownMenuItem>
           </DropdownMenuContent>

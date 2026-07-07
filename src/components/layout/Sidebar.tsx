@@ -8,6 +8,7 @@ import {
   Receipt,
   Users,
   Shield,
+  Tag,
   ChevronLeft,
   ChevronRight,
   Menu,
@@ -17,6 +18,12 @@ import { useAppSelector, useAppDispatch } from "@/app/hooks";
 import { toggleSidebar } from "@/app/uiSlice";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface NavItem {
   to: string;
@@ -55,6 +62,12 @@ export function Sidebar() {
           to: "/products/new",
           label: "Add Product",
           icon: <PlusCircle className="h-5 w-5" />,
+          roles: ["admin", "manager"],
+        },
+        {
+          to: "/categories",
+          label: "Categories",
+          icon: <Tag className="h-5 w-5" />,
           roles: ["admin", "manager"],
         },
       ],
@@ -98,11 +111,46 @@ export function Sidebar() {
     return user ? item.roles.includes(user.role) : false;
   }
 
+  const NavLinkContent = ({
+    item,
+    isActive,
+  }: {
+    item: NavItem;
+    isActive: boolean;
+  }) => (
+    <NavLink
+      to={item.to}
+      onClick={() => setMobileOpen(false)}
+      className={cn(
+        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+        isActive
+          ? "bg-primary text-primary-foreground shadow-sm"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground",
+        sidebarCollapsed && "justify-center px-2"
+      )}
+    >
+      <span
+        className={cn(
+          "transition-colors",
+          isActive ? "text-primary-foreground" : "text-muted-foreground"
+        )}
+      >
+        {item.icon}
+      </span>
+      {!sidebarCollapsed && <span>{item.label}</span>}
+    </NavLink>
+  );
+
   const sidebarContent = (
     <div className="flex h-full flex-col">
-      <div className="flex h-14 items-center justify-between px-4 border-b">
+      <div className="flex h-16 items-center justify-between px-5 border-b">
         {!sidebarCollapsed && (
-          <span className="text-lg font-bold tracking-tight">ERP</span>
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-lg">
+              E
+            </div>
+            <span className="text-lg font-bold tracking-tight">ERP</span>
+          </div>
         )}
         <Button
           variant="ghost"
@@ -114,37 +162,44 @@ export function Sidebar() {
         </Button>
       </div>
 
-      <nav className="flex-1 overflow-y-auto py-4 px-2">
+      <nav className="flex-1 overflow-y-auto py-5 px-3">
         {navSections.map((section) => {
           const visibleItems = section.items.filter(isItemVisible);
           if (visibleItems.length === 0) return null;
 
           return (
-            <div key={section.title} className="mb-4">
+            <div key={section.title} className="mb-6">
               {!sidebarCollapsed && (
-                <p className="mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
                   {section.title}
                 </p>
               )}
               <ul className="space-y-1">
                 {visibleItems.map((item) => {
-                  const isActive = location.pathname === item.to;
+                  const isActive =
+                    location.pathname === item.to ||
+                    (item.to !== "/" && location.pathname.startsWith(item.to));
                   return (
                     <li key={item.to}>
-                      <NavLink
-                        to={item.to}
-                        onClick={() => setMobileOpen(false)}
-                        className={cn(
-                          "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                          isActive
-                            ? "bg-primary/10 text-primary"
-                            : "text-foreground/70 hover:bg-accent hover:text-foreground",
-                          sidebarCollapsed && "justify-center px-2"
-                        )}
-                      >
-                        {item.icon}
-                        {!sidebarCollapsed && <span>{item.label}</span>}
-                      </NavLink>
+                      {sidebarCollapsed ? (
+                        <TooltipProvider delayDuration={0}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div>
+                                <NavLinkContent
+                                  item={item}
+                                  isActive={isActive}
+                                />
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="right">
+                              {item.label}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : (
+                        <NavLinkContent item={item} isActive={isActive} />
+                      )}
                     </li>
                   );
                 })}
@@ -154,18 +209,21 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="border-t p-2">
+      <div className="border-t p-3">
         <Button
           variant="ghost"
-          size="icon"
-          className="w-full"
+          size="sm"
+          className="w-full justify-center text-muted-foreground hover:text-foreground"
           onClick={() => dispatch(toggleSidebar())}
           aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {sidebarCollapsed ? (
-            <ChevronRight className="h-5 w-5" />
+            <ChevronRight className="h-4 w-4" />
           ) : (
-            <ChevronLeft className="h-5 w-5" />
+            <>
+              <ChevronLeft className="h-4 w-4 mr-2" />
+              <span className="text-xs">Collapse</span>
+            </>
           )}
         </Button>
       </div>
@@ -177,10 +235,10 @@ export function Sidebar() {
       {/* Mobile hamburger */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="fixed left-4 top-3 z-50 lg:hidden"
+        className="fixed left-4 top-3 z-50 lg:hidden p-2 rounded-md bg-card border shadow-sm"
         aria-label="Open sidebar"
       >
-        <Menu className="h-6 w-6" />
+        <Menu className="h-5 w-5" />
       </button>
 
       {/* Mobile overlay */}
@@ -194,8 +252,8 @@ export function Sidebar() {
       {/* Mobile drawer */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex flex-col bg-card border-r transition-transform duration-300 lg:static lg:translate-x-0",
-          sidebarCollapsed ? "w-16" : "w-60",
+          "fixed inset-y-0 left-0 z-50 flex flex-col bg-card border-r transition-all duration-300 lg:static lg:translate-x-0",
+          sidebarCollapsed ? "w-20" : "w-64",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
