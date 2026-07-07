@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Plus, RotateCw, Search, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useGetCategoriesQuery } from "@/features/categories/categoryApi";
+import { AddProductDialog } from "../components/AddProductDialog";
 
 export default function ProductListPage() {
   const user = useAppSelector((state) => state.auth.user);
@@ -29,6 +30,7 @@ export default function ProductListPage() {
     searchParams.get("search") ?? ""
   );
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
 
   const search = searchParams.get("search") ?? "";
   const category = searchParams.get("category") ?? "";
@@ -114,11 +116,9 @@ export default function ProductListPage() {
           </p>
         </div>
         {!isEmployee && (
-          <Button asChild>
-            <Link to="/products/new">
-              <Plus className="h-4 w-4" />
-              Add Product
-            </Link>
+          <Button onClick={() => setAddDialogOpen(true)}>
+            <Plus className="h-4 w-4" />
+            Add Product
           </Button>
         )}
       </div>
@@ -191,11 +191,9 @@ export default function ProductListPage() {
           }
           action={
             !isEmployee && !search && !category ? (
-              <Button asChild>
-                <Link to="/products/new">
-                  <Plus className="h-4 w-4" />
-                  Add Product
-                </Link>
+              <Button onClick={() => setAddDialogOpen(true)}>
+                <Plus className="h-4 w-4" />
+                Add Product
               </Button>
             ) : undefined
           }
@@ -219,6 +217,8 @@ export default function ProductListPage() {
         isLoading={isDeleting}
         variant="destructive"
       />
+
+      <AddProductDialog open={addDialogOpen} onOpenChange={setAddDialogOpen} />
     </div>
   );
 }

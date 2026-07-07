@@ -18,11 +18,6 @@ import { cn } from "@/lib/utils";
 const breadcrumbMap: Record<string, { label: string; to?: string }[]> = {
   "/": [{ label: "Dashboard" }],
   "/products": [{ label: "Inventory" }, { label: "Products" }],
-  "/products/new": [
-    { label: "Inventory" },
-    { label: "Products", to: "/products" },
-    { label: "Add Product" },
-  ],
   "/products/:id/edit": [
     { label: "Inventory" },
     { label: "Products", to: "/products" },

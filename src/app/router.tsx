@@ -4,7 +4,6 @@ import LoginPage from "../features/auth/pages/LoginPage";
 import AppShell from "../components/layout/AppShell";
 import DashboardPage from "../features/dashboard/pages/DashboardPage";
 import ProductListPage from "../features/products/pages/ProductListPage";
-import AddProductPage from "../features/products/pages/AddProductPage";
 import EditProductPage from "../features/products/pages/EditProductPage";
 import CreateSalePage from "../features/sales/pages/CreateSalePage";
 import SaleHistoryPage from "../features/sales/pages/SaleHistoryPage";
@@ -43,7 +42,6 @@ export const router = createBrowserRouter([
           {
             element: <RoleRoute roles={["admin", "manager"]} />,
             children: [
-              { path: "products/new", element: <AddProductPage /> },
               { path: "products/:id/edit", element: <EditProductPage /> },
               { path: "categories", element: <CategoriesListPage /> },
             ],

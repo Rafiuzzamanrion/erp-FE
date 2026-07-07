@@ -31,12 +31,14 @@ type ProductFormValues = z.output<typeof productFormSchema>;
 interface ProductFormProps {
   initialData?: Product;
   onSubmit: (data: FormData) => Promise<void>;
+  onCancel?: () => void;
   isLoading?: boolean;
 }
 
 export default function ProductForm({
   initialData,
   onSubmit,
+  onCancel,
   isLoading,
 }: ProductFormProps) {
   const navigate = useNavigate();
@@ -207,7 +209,7 @@ export default function ProductForm({
         <Button
           type="button"
           variant="outline"
-          onClick={() => navigate("/products")}
+          onClick={onCancel ? onCancel : () => navigate("/products")}
         >
           Cancel
         </Button>

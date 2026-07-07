@@ -3,7 +3,6 @@ import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Package,
-  PlusCircle,
   ShoppingCart,
   Receipt,
   Users,
@@ -57,12 +56,6 @@ export function Sidebar() {
           to: "/products",
           label: "Products",
           icon: <Package className="h-5 w-5" />,
-        },
-        {
-          to: "/products/new",
-          label: "Add Product",
-          icon: <PlusCircle className="h-5 w-5" />,
-          roles: ["admin", "manager"],
         },
         {
           to: "/categories",
