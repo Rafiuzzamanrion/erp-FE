@@ -58,7 +58,9 @@ export default function DashboardPage() {
       }
 
       prevLowStockRef.current = currentIds;
-    } catch {}
+    } catch {
+      toast.error("Failed to fetch low stock alerts");
+    }
   }, [fetchLowStockAlerts, dispatch]);
 
   useEffect(() => {

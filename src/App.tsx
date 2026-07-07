@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Provider } from "react-redux";
 import { RouterProvider } from "react-router-dom";
+import { Toaster } from "sonner";
 import { store } from "./app/store";
 import { router } from "./app/router";
 import ErrorBoundary from "./app/ErrorBoundary";
@@ -44,6 +45,7 @@ export default function App() {
         <SessionHydrator>
           <RouterProvider router={router} />
         </SessionHydrator>
+        <Toaster richColors position="top-right" />
       </ErrorBoundary>
     </Provider>
   );

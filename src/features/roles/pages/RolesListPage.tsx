@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { RotateCw, ShieldPlus, Trash2, Search } from "lucide-react";
+import { RotateCw, ShieldPlus, Trash2, Pencil, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,7 @@ import {
 import {
   useGetRolesQuery,
   useCreateRoleMutation,
+  useUpdateRoleMutation,
   useDeleteRoleMutation,
 } from "../roleApi";
 import PageHeader from "@/components/shared/PageHeader";
@@ -34,6 +35,7 @@ import RolesListSkeleton from "../components/RolesListSkeleton";
 export default function RolesListPage() {
   const { data: roles, isLoading, isError, refetch } = useGetRolesQuery();
   const [createRole] = useCreateRoleMutation();
+  const [updateRole] = useUpdateRoleMutation();
   const [deleteRole] = useDeleteRoleMutation();
 
   const [searchInput, setSearchInput] = useState("");
@@ -53,9 +55,15 @@ export default function RolesListPage() {
   );
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [editId, setEditId] = useState<{ _id: string; name: string } | null>(
+    null
+  );
   const [formName, setFormName] = useState("");
+  const [editFormName, setEditFormName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditSubmitting, setIsEditSubmitting] = useState(false);
 
   const handleCreate = async () => {
     if (!formName) return;
@@ -69,6 +77,22 @@ export default function RolesListPage() {
       toast.error("Failed to create role");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleEdit = async () => {
+    if (!editId || !editFormName) return;
+    setIsEditSubmitting(true);
+    try {
+      await updateRole({ id: editId._id, name: editFormName }).unwrap();
+      toast.success("Role updated");
+      setIsEditOpen(false);
+      setEditId(null);
+      setEditFormName("");
+    } catch {
+      toast.error("Failed to update role");
+    } finally {
+      setIsEditSubmitting(false);
     }
   };
 
@@ -198,14 +222,28 @@ export default function RolesListPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     {!role.isSystem && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`Delete ${role.name}`}
-                        onClick={() => setDeleteId(role._id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Edit ${role.name}`}
+                          onClick={() => {
+                            setEditId({ _id: role._id, name: role.name });
+                            setEditFormName(role.name);
+                            setIsEditOpen(true);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Delete ${role.name}`}
+                          onClick={() => setDeleteId(role._id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
                     )}
                   </TableCell>
                 </TableRow>
@@ -239,6 +277,53 @@ export default function RolesListPage() {
             </Button>
             <Button loading={isSubmitting} onClick={handleCreate}>
               Create
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog
+        open={isEditOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setIsEditOpen(false);
+            setEditId(null);
+            setEditFormName("");
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Role</DialogTitle>
+            <DialogDescription>
+              Rename the role &quot;{editId?.name}&quot;.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-role-name">Name</Label>
+              <Input
+                id="edit-role-name"
+                value={editFormName}
+                onChange={(e) => setEditFormName(e.target.value)}
+                placeholder="e.g. auditor"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsEditOpen(false);
+                setEditId(null);
+                setEditFormName("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button loading={isEditSubmitting} onClick={handleEdit}>
+              Save
             </Button>
           </DialogFooter>
         </DialogContent>
